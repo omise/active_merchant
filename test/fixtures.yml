@@ -434,6 +434,11 @@ ogone:
   password: PASSWORD
   signature: SIGNATURE
 
+# Get credentials or api keys from https://dashboard.omise.co
+omise:
+  public_key:
+  secret_key:
+
 # Working credentials, no need to replace
 openpay:
   key: 'sk_e568c42a6c384b7ab02cd47d2e407cab'
