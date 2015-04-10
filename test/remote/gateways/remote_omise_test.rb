@@ -6,6 +6,7 @@ class RemoteOmiseTest < Test::Unit::TestCase
     @amount  = 8888
     @credit_card   = credit_card('4242424242424242')
     @declined_card = credit_card('4255555555555555')
+    @invalid_cvc   = credit_card('4024007148673576', {:verification_value => ''})
     @options = {
       :description => 'Active Merchant',
       :email => 'active.merchant@testing.test'
@@ -27,9 +28,9 @@ class RemoteOmiseTest < Test::Unit::TestCase
   end
 
   def test_failed_purchase
-    response = @gateway.purchase(@amount, @declined_card)
+    response = @gateway.purchase(@amount, @invalid_cvc)
     assert_failure response
-    assert_equal 'invalid_card', response.error_code
+    assert_equal Gateway::STANDARD_ERROR_CODE[:invalid_cvc], response.error_code
   end
 
   def test_successful_purchase_with_token

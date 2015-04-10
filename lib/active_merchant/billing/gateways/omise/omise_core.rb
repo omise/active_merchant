@@ -6,6 +6,10 @@ module ActiveMerchant #:nodoc:
       API_VERSION = '1.0'
       API_URL     = 'https://api.omise.co/'
 
+      STANDARD_ERROR_CODE_MAPPING = {
+        'invalid_security_code' => Gateway::STANDARD_ERROR_CODE[:invalid_cvc]
+      }
+
       def self.included(base)
         base.live_url = base.test_url = API_URL
 
@@ -79,7 +83,7 @@ module ActiveMerchant #:nodoc:
           response,
           authorization: authorization_from(response),
           test: test?,
-          error_code: successful?(response) ? nil : error_code_from(response)
+          error_code: successful?(response) ? nil : STANDARD_ERROR_CODE_MAPPING[error_code_from(response)]
         )
       end
 
@@ -97,7 +101,7 @@ module ActiveMerchant #:nodoc:
       end
 
       def successful?(response)
-        response.key?('object') and response['object'] != 'error'
+        ( response.key?('object') and response['object'] != 'error' ) and response['failure_code'].nil?
       end
 
       def add_creditcard(post, creditcard)
