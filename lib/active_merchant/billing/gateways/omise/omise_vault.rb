@@ -28,7 +28,7 @@ module ActiveMerchant #:nodoc:
         if successful?(response)
           Response.new(true, nil, token: response)
         else
-          Response.new(false, message_from(response), {}, error_code: error_code_from(response))
+          Response.new(false, message_from(response), {}, error_code: STANDARD_ERROR_CODE_MAPPING[error_code_from(response)])
         end
       end
 
