@@ -73,6 +73,12 @@ class OmiseTest < Test::Unit::TestCase
     assert(!success, "expect success to be false")
   end
 
+  def test_error_code_from
+    response = @gateway.send(:parse, error_response)
+    error_code  = @gateway.send(:error_code_from, response)
+    assert_equal 'failed_fraud_check', error_code
+  end
+
   def test_successful_api_request
     @gateway.expects(:ssl_request).returns(successful_list_charges_response)
     response = @gateway.send(:https_request, :get, 'charges')
