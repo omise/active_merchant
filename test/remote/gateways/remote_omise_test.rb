@@ -68,11 +68,27 @@ class RemoteOmiseTest < Test::Unit::TestCase
     assert_equal true, customer.params['deleted']
   end
 
-  def test_authorize_and_capture
+  def test_authorize
     authorize = @gateway.authorize(@amount, @credit_card, @options)
     assert_success authorize
     assert !authorize.params['captured'], 'captured should be false'
     assert authorize.params['authorized'], 'authorized should be true'
+  end
+
+  def test_authorize_and_capture
+    authorize = @gateway.authorize(@amount, @credit_card, @options)
+    capture   = @gateway.capture(@amount, authorize.authorization, @options)
+    assert_success capture
+    assert capture.params['captured'], 'captured should be true'
+    assert capture.params['authorized'], 'authorized should be true'
+  end
+
+  def test_authorize_and_capture_partial
+    authorize = @gateway.authorize(@amount, @credit_card, @options)
+    capture   = @gateway.capture(@amount/2.0, authorize.authorization, @options)
+    assert_success capture
+    assert capture.params['captured'], 'captured should be true'
+    assert capture.params['authorized'], 'authorized should be true'
   end
 
   def test_successful_store_with_customer
