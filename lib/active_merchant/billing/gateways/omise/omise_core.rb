@@ -1,4 +1,4 @@
-require 'JSON'
+require 'json'
 require 'active_merchant/billing/gateway'
 module ActiveMerchant #:nodoc:
   module Billing #:nodoc:
