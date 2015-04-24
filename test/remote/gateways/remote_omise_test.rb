@@ -23,6 +23,7 @@ class RemoteOmiseTest < Test::Unit::TestCase
     response = @gateway.purchase(@amount, @credit_card)
     assert_success response
     assert_equal 'Success', response.message
+    assert_equal response.params['amount'], @amount
     assert response.params['captured'], 'captured should be true'
     assert response.params['authorized'], 'authorized should be true'
   end
@@ -39,6 +40,7 @@ class RemoteOmiseTest < Test::Unit::TestCase
     token_id = token.payment_data.params['token']['id']
     response = @gateway.purchase(@amount, nil, {:token_id=>token_id})
     assert_success response
+    assert_equal response.params['amount'], @amount
   end
 
   def test_failed_purchase_with_token
@@ -71,6 +73,7 @@ class RemoteOmiseTest < Test::Unit::TestCase
   def test_authorize_and_capture
     authorize = @gateway.authorize(@amount, @credit_card, @options)
     assert_success authorize
+    assert_equal authorize.params['amount'], @amount
     assert !authorize.params['captured'], 'captured should be false'
     assert authorize.params['authorized'], 'authorized should be true'
   end
@@ -94,13 +97,16 @@ class RemoteOmiseTest < Test::Unit::TestCase
   def test_successful_void
     purchase = @gateway.purchase(@amount, @credit_card, @options)
     assert_success purchase
+    assert_equal purchase.params['amount'], @amount
     response = @gateway.void(purchase.authorization)
     assert_success response
+    assert_equal response.params['amount'], @amount
   end
 
   def test_successful_refund
     purchase = @gateway.purchase(@amount, @credit_card, @options)
     assert_success purchase
+    assert_equal purchase.params['amount'], @amount
     response = @gateway.refund(@amount-1000, purchase.authorization)
     assert_success response
     assert_equal @amount-1000, response.params['amount']
