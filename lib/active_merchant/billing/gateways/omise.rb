@@ -115,20 +115,23 @@ module ActiveMerchant #:nodoc:
       end
 
       # Create a Customer and associated Card.
-      # default_card => true to mark as a default card
       #
       # ==== Parameters
       #
       # * <tt>payment</tt> -- The CreditCard.
       # * <tt>options</tt> -- A standard hash options.
+      # * use options set_default_card: true to set the default card
 
       def store(payment, options={})
         return Response.new(false, "#{payment.errors.full_messages.join('. ')}") if payment.is_a?(CreditCard) and !payment.valid?
         post, card_params = {}, {}
-        add_customer_data(post, options)
-        add_or_create_token(card_params, payment, options)
-        return update_default_card(post, card_params, options) if options[:customer_id] and options[:default_card]
-        commit(:post, 'customers', post.merge(card_params), options)
+        add_customer_data(post, options) # add description, email params etc.
+        add_or_create_token(card_params, payment, options) # add token or card to params[:card] when it's valid.
+        if options[:customer_id] # attach the card to this customer
+          attach_customer_card(post, card_params, options)
+        else
+          commit(:post, 'customers', post.merge(card_params), options)
+        end
       end
 
       # Delete a customer or associated credit card.
@@ -178,45 +181,37 @@ module ActiveMerchant #:nodoc:
         OmisePaymentToken.new(@vault.tokenize(creditcard, options))
       end
 
-      def update_default_card(post, card_params, options)
-          MultiResponse.run(:first) do |r|
-            r.process {
-              commit(:post, "customers/#{CGI.escape(options[:customer_id])}/cards", card_params, options)
-            }
-            if r.success? and options[:default_card]
-              post[:default_card] = r.params['id'] if !r.params['id'].blank?
-              r.process { update_customer(options[:customer], post) } if post.count > 0
-            end
-          end
-      end
-
-      def update_customer(customer_id, params, options={})
-        commit(:post, "customers/#{CGI.escape(customer_id)}", params, options)
-      end
-
-      def create_customer(description, email)
-        post = {}
-        add_customer_data(post, {:description => description, :email => email})
-        commit(:post, "customers", params, options)
-      end
-
       def add_or_create_token(post, payment, options={})
-        omise_token = omise_tokenize(payment)
-        response    = omise_token.payment_data
-        token_id    = response.params.key?('token') ?
-                        response.params['token']['id'] : options[:token_id]
-        if token_id
-           add_token_or_card(post, token_id, options)
+        if options[:token_id] or (options[:card_id] and options[:customer_id])
+          add_token_or_card(post, nil, options) #add token id or card id to post[:card]
         else
-           response #in case, failed response
+          omise_token = omise_tokenize(payment) #try to create token
+          response    = omise_token.payment_data
+          return response unless response.params.key?('token') #return omise error object.
+          add_token_or_card(post, response.params['token']['id'], options)
         end
+      end
+
+      def update_customer(customer_id, params, options)
+        commit(:patch, "customers/#{CGI.escape(customer_id)}", params, options)
+      end
+
+      def attach_customer_card(post, card_params, options)
+        customer_id = options[:customer_id]
+        MultiResponse.run do |r|
+          r.process { update_customer(customer_id, card_params, options) } #attach
+          if options[:set_default_card] and r.success? and !r.params['id'].blank?
+            post[:default_card] = r.params['cards']['data'].last['id'] #the latest card id
+            r.process { update_customer(customer_id, post, options) } if post.count > 0
+          end
+        end.responses.last
       end
 
       def create_post_for_purchase(money, payment, options)
         post = {}
         post[:capture] = options[:capture] if options[:capture]
-        error_resp = add_or_create_token(post, payment, options)
-        return error_resp if error_resp and error_resp.is_a?(Response)
+        error_response = add_or_create_token(post, payment, options)
+        return error_response if error_response and error_response.is_a?(Response)
         MultiResponse.run do |r|
           r.process do
             add_amount(post, money, options)

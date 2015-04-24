@@ -78,6 +78,12 @@ class RemoteOmiseTest < Test::Unit::TestCase
   def test_successful_store_with_customer
     response = @gateway.store(@credit_card, @options)
     assert_success response
+    customer_id  = response.params['id']
+    default_card = response.params['default_card']
+    resp = @gateway.store(credit_card('4111111111111111'), {customer_id: customer_id, set_default_card: true})
+    new_default_card = resp.params['default_card']
+    assert new_default_card.match(/card_test_[1-9a-z]+/)
+    assert default_card != new_default_card
   end
 
   def test_failed_store

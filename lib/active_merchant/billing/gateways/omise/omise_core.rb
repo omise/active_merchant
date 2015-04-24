@@ -117,8 +117,7 @@ module ActiveMerchant #:nodoc:
       end
 
       def add_customer(post, options={})
-        return if post[:card].nil?
-        return if post[:card].match(/tokn(_test)?_[1-9a-z]+/)
+        return if post[:card].nil? or post[:card].match(/tokn(_test)?_[1-9a-z]+/)
         post[:customer] = options[:customer_id] if post[:card].match(/card(_test)?_[1-9a-z]+/)
       end
 
@@ -128,7 +127,7 @@ module ActiveMerchant #:nodoc:
       end
 
       def add_token_or_card(post, token_or_card, options={})
-        post[:card] = options[:token_id] || token_or_card
+        post[:card] = options[:token_id] || options[:card_id] || token_or_card
       end
 
       def add_amount(post, money, options)
