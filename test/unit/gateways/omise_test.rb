@@ -38,11 +38,9 @@ class OmiseTest < Test::Unit::TestCase
     ).match(/\[FILTERED\]/)
   end
 
-   def test_gateway_urls
-     assert_equal 'https://vault.omise.co/', OmiseVaultGateway::VAULT_URL
+   def test_gateway_url
      assert_equal 'https://api.omise.co/', OmiseGateway::API_URL
-     assert_equal OmiseGateway::API_URL, @gateway.live_url
-     assert_equal OmiseVaultGateway::VAULT_URL, OmiseVaultGateway.new(:public_key=>'pkey_test_abc').live_url
+     assert_equal 'https://vault.omise.co/', OmiseGateway::VAULT_URL
    end
 
   def test_request_headers
