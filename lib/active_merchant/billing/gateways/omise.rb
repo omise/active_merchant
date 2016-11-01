@@ -19,13 +19,14 @@ module ActiveMerchant #:nodoc:
       self.money_format     = :cents
 
       #Country supported by Omise
-      # * Thailand
-      self.supported_countries = %w( TH )
+      # * Thailand (Baht)
+      # * Japan (Yen)
+      self.supported_countries = %w( TH JP )
 
       # Credit cards supported by Omise
       # * VISA
       # * MasterCard
-      self.supported_cardtypes = [:visa, :master]
+      self.supported_cardtypes = [:visa, :master , :jcb]
 
       # Omise main page
       self.homepage_url = 'https://www.omise.co/'
@@ -175,14 +176,20 @@ module ActiveMerchant #:nodoc:
       end
 
       def headers(options={})
+        version = api_version(options)
         key = options[:key] || @secret_key
         {
           'Content-Type'    => 'application/json;utf-8',
-          'Omise-Version'   => @api_version || "2014-07-27",
-          'User-Agent'      => "ActiveMerchantBindings/#{ActiveMerchant::VERSION} Ruby/#{RUBY_VERSION}",
+          'Omise-Version'   => version,
+          'User-Agent'      => "Omise/#{version} ActiveMerchantBindings/#{ActiveMerchant::VERSION} Ruby/#{RUBY_VERSION}",
           'Authorization'   => 'Basic ' + Base64.encode64(key.to_s + ':').strip,
+          "Omise-Version"   => version,
           'Accept-Encoding' => 'utf-8'
         }
+      end
+
+      def api_version(options)
+        options[:version] || @options[:version] || "2014-07-27"
       end
 
       def url_for(endpoint)
